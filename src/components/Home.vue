@@ -33,43 +33,88 @@
                     label(
                       for="radioSerial"
                     ) Serial
+
+                // Total Time
                 .total-time
+
+                  // Film Time
                   .total-time__film(
                     v-if="whatWatch === 'Film'"
                   )
-                    span Total Film Times
+                    span.time-title Hours
+                    input.time-input(
+                      type="number"
+                      v-model="filmHours"
+                    )
+                    span.time-title Minutes
+                    input.time-input(
+                      type="number"
+                      v-model="filmMinutes"
+                    )
+
+                    p {{ filmTime }}
+
+                  // Serial Time
                   .total-time__Serial(
                     v-if="whatWatch === 'Serial'"
                   )
-                    span Total Serial Times
-                .tag-list
-                  .ui-tag__wrapper
+                    span.time-title How many season?
+                    input.time-input(
+                      type="number"
+                      v-model="serialSeason"
+                    )
+                    span.time-title How many series?
+                    input.time-input(
+                      type="number"
+                      v-model="serialSeries"
+                    )
+                    span.time-title How long is one series? (minutes)
+                    input.time-input(
+                      type="number"
+                      v-model="serialSeriesMinutes"
+                    )
+
+                    p {{ SerialTime }}
+
+                // TAG LIST
+                // Add  New Tag
+                .tag-list.tag-list--add
+                  .ui-tag__wrapper(
+                    @click="tagMenuShow = !tagMenuShow"
+                  )
                     .ui-tag
-                      span.tag-title Dogs
-                      span.button-close
-        section
-            .conteiner
-                .task-item(
-                    v-for="task in tasks"
-                    :key="task.id"
-                    :class="{ completed: task.completed }"
+                      span.tag-title Add New
+                      span.button-close(
+                        :class="{ active: !tagMenuShow }"
+                      )
+
+                // Show Input
+                .tag-list.tag-list--menu(
+                  v-if="tagMenuShow"
                 )
-                    .ui-card.ui-card--shadow
-                        .task-item__info
-                            .task-item__main-info
-                                span.ui-label.ui-label--light {{ task.whatWatch }}
-                                span Total Time:
-                            span.button-close
-                        .task-item__content
-                            .task-item__header
-                                .ui-checkbox-wrapper
-                                    input.ui-checkbox(
-                                        type='checkbox'
-                                        v-model="task.completed"
-                                        )
-                                span.ui-title-3 {{ task.title }}
-                            .task-item__body
-                                p.ui-text-regular {{ task.description }}
+                  input.tag-add--input(
+                    type="text"
+                    placeholder="New tag"
+                    v-model="tagTitle"
+                    @keyup.enter="newTag"
+                  )
+                  .button.button-default(
+                    @click="newTag"
+                  ) Send
+
+                // All Tags
+                .tag-list
+                  .ui-tag__wrapper(
+                    v-for="tag in tags"
+                    :key="tag.title"
+                  )
+                    .ui-tag(
+                      @click="addTagUsed(tag)"
+                      :class="{used: tag.use}"
+                    )
+                      span.tag-title {{ tag.title }}
+                      span.button-close
+                p {{tagsUsed}}
 </template>
 
 <script>
@@ -80,43 +125,102 @@ export default {
       taskDescription: '',
       whatWatch: 'Film',
       taskId: 3,
-      tasks: [
+
+      // Total Time
+      // Film
+      filmHours: 1,
+      filmMinutes: 30,
+      // Serial
+      serialSeason: 1,
+      serialSeries: 11,
+      serialSeriesMinutes: 40,
+
+      // Tags
+      tagTitle: '',
+      tagMenuShow: false,
+      tagsUsed: [],
+      tags: [
         {
-          'id': 1,
-          'title': 'GrowthBusters: Hooked on Growth',
-          'description': 'I directed this documentary challenging the myths linking growth with prosperity and fulfillment. It explores how our beliefs about economic and consumption',
-          'whatWatch': 'Film',
-          'completed': false,
-          'editing': false
+          title: 'Comedy‎',
+          use: false
         },
         {
-          'id': 2,
-          'title': 'Game of thrones',
-          'description': 'Best serials',
-          'whatWatch': 'Serial',
-          'completed': false,
-          'editing': false
+          title: 'Westerns',
+          use: false
+        },
+        {
+          title: 'Adventure',
+          use: false
         }
       ]
     }
   },
   methods: {
+    newTag () {
+      if (this.tagTitle === '') {
+        return
+      }
+      this.tags.push({
+        title: this.tagTitle,
+        used: false
+      })
+      /*
+      const tag = {
+        title: this.tagTitle,
+      }
+      */
+    },
+
     newTask () {
       if (this.taskTitle === '') return
 
-      this.tasks.push({
+      let time
+      if (this.whatWatch === 'Film') time = this.filmTime
+      else time = this.SerialTime
+      const task = {
         id: this.taskId,
         title: this.taskTitle,
         description: this.taskDescription,
         whatWatch: this.whatWatch,
+        time,
+        tagsUsed: this.tagsUsed,
         completed: false,
         editing: false
-      })
+      }
+      console.log(task)
 
       // Reset
       this.taskId += 1
       this.taskTitle = ''
       this.taskDescription = ''
+      this.tagsUsed = []
+    },
+
+    addTagUsed (tag) {
+      tag.use = !tag.use
+      if (tag.use) {
+        this.tagsUsed.push(
+          tag.title
+        )
+      } else {
+        this.tagsUsed.splice(tag.title, 1)
+      }
+    },
+
+    getHoursAndMinutes (minutes) {
+      let hours = Math.trunc(minutes / 60)
+      let min = minutes % 60
+      return hours + ' Hours ' + min + ' Minutes '
+    }
+  },
+  computed: {
+    filmTime () {
+      let min = (this.filmHours * 60) + (this.filmMinutes * 1)
+      return this.getHoursAndMinutes(min)
+    },
+    SerialTime () {
+      let min = this.serialSeason * this.serialSeries * this.serialSeriesMinutes
+      return this.getHoursAndMinutes(min)
     }
   }
 }
@@ -124,43 +228,55 @@ export default {
 
 <style lang="stylus" scoped>
 .option-list
-    display flex
-    margin-bottom 20px
-    .what-watch--radio
-        margin-right  12px
-    label
-        margin-right  20px
-        &:last-child
-            margin-right  0
-
-.task-item
-    margin-bottom 20px
+  display flex
+  margin-bottom 20px
+  .what-watch--radio
+    margin-right  12px
+  label
+    margin-right  20px
     &:last-child
-        margin-bottom 0
+      margin-right  0
 
-.total-time
-    margin-bottom 20px
-
-.ui-label
-    margin-right 8px
-
-.task-item__info
-    display flex
-    align-items center
-    justify-content space-between
-    margin-bottom 20px
+// Tags
+.tag-list
+  margin-bottom 20px
+.ui-tag__wrapper
+  margin-right 18px
+  margin-bottom 10px
+  &:last-child
+    margin-right 0
+.ui-tag
+  .button-close
+    &.active
+        transform: rotate(45deg)
+  &.used
+    background-color: #444ce0
+    color #fff
     .button-close
-        with 20px
-        height @width
-
-.task-item__header
-    display flex
-    align-items center
-    margin-bottom 18px
-
-.ui-checkbox-wrapper
-    margin-right 8px
-
-.ui-title-3
-    margin-bottom 0
+      &:before,
+      &:after
+        background-color: #fff
+// Tag Menu Show
+.tag-list--menu
+  display flex
+  justify-content space-between
+  align-items center
+// New Tag Input
+.tag-add--input
+  margin-bottom 0
+  margin-right 10px
+  height 42px
+// Total Time
+.total-time
+  p
+    margin-bottom 6px
+  span
+    margin-right 16px
+  .task-input
+    max-width 80px
+    margin-bottom 28px
+    margin-right 10px
+.button-list
+  display flex
+  justify-content flex-end
 </style>
